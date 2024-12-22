@@ -1,0 +1,94 @@
+version: 0.1.0
+modifiers:
+    - !EpochRangeModifier
+        start_epoch: 0.0
+        end_epoch: 75
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.75
+        mask_type: unstructured
+        params: ['head.fc.weight']
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.85
+        mask_type: unstructured
+        params: [
+            "stages.4.1.transformer.0.mlp.fc1.weight",
+            "stages.4.1.transformer.0.mlp.fc2.weight",
+            "stages.4.1.transformer.1.mlp.fc1.weight",
+            "stages.4.1.transformer.1.mlp.fc2.weight",
+            "stages.4.1.transformer.2.mlp.fc1.weight",
+            "stages.4.1.transformer.2.mlp.fc2.weight",
+            "stages.3.1.transformer.0.mlp.fc1.weight",
+            "stages.3.1.transformer.0.mlp.fc2.weight",
+            "stages.3.1.transformer.1.mlp.fc1.weight",
+            "stages.3.1.transformer.1.mlp.fc2.weight",
+            "stages.3.1.transformer.2.mlp.fc1.weight",
+            "stages.3.1.transformer.2.mlp.fc2.weight",
+            "stages.3.1.transformer.3.mlp.fc1.weight",
+            "stages.3.1.transformer.3.mlp.fc2.weight",
+            "stages.2.1.transformer.0.mlp.fc1.weight",
+            "stages.2.1.transformer.0.mlp.fc2.weight",
+            "stages.2.1.transformer.1.mlp.fc1.weight",
+            "stages.2.1.transformer.1.mlp.fc2.weight"
+        ]
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.85
+        mask_type: unstructured
+        params: [
+            "stages.4.1.transformer.0.attn.qkv.weight",
+            "stages.4.1.transformer.1.attn.qkv.weight",
+            "stages.4.1.transformer.2.attn.qkv.weight"
+        ]
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.75
+        mask_type: unstructured
+        params: [
+                    "stages.4.1.conv_fusion.conv.weight"
+                ]
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.50
+        mask_type: unstructured
+        params: [                    
+                    "stages.2.1.conv_kxk.conv.weight",
+                    "stages.4.0.conv3_1x1.conv.weight",
+                    "stages.4.0.conv1_1x1.conv.weight",
+                    "stages.3.0.conv3_1x1.conv.weight",
+                    "stages.3.0.conv1_1x1.conv.weight",
+                    "stages.2.1.conv_fusion.conv.weight",
+                    "stages.3.1.conv_fusion.conv.weight",
+                    "stages.3.1.conv_kxk.conv.weight",
+                    "stages.4.1.conv_kxk.conv.weight"
+        ]
+
+    - !GMPruningModifier
+        start_epoch: 5
+        end_epoch: 60
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.50
+        mask_type: unstructured
+        params: ["final_conv.conv.weight"]

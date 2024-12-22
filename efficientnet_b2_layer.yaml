@@ -1,0 +1,114 @@
+version: 0.1.0
+modifiers:
+    - !EpochRangeModifier
+        start_epoch: 0.0
+        end_epoch: 50
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 40
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.90
+        mask_type: unstructured
+        params: ['classifier.weight']
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 40
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.80
+        mask_type: unstructured
+        params: [
+                    'blocks.6.1.conv_pw.weight',
+                    'blocks.6.1.conv_pwl.weight',
+                    'blocks.5.1.conv_pw.weight',
+                    'blocks.5.1.conv_pwl.weight',
+                    'blocks.5.2.conv_pw.weight',
+                    'blocks.5.2.conv_pwl.weight',
+                    'blocks.5.3.conv_pw.weight'
+                ]
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 40
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.50
+        mask_type: unstructured
+        params: [
+                    "blocks.0.0.conv_dw.weight",
+                    "blocks.0.0.conv_pw.weight",
+                    "blocks.0.1.conv_dw.weight",
+                    "blocks.0.1.conv_pw.weight",
+                    "blocks.1.0.conv_pw.weight",
+                    "blocks.1.0.conv_dw.weight",
+                    "blocks.1.0.conv_pwl.weight",
+                    "blocks.1.1.conv_pw.weight",
+                    "blocks.1.1.conv_dw.weight",
+                    "blocks.1.1.conv_pwl.weight",
+                    "blocks.1.2.conv_pw.weight",
+                    "blocks.1.2.conv_dw.weight",
+                    "blocks.1.2.conv_pwl.weight",
+                    "blocks.2.0.conv_pw.weight",
+                    "blocks.2.0.conv_dw.weight",
+                    "blocks.2.0.conv_pwl.weight",
+                    "blocks.2.1.conv_pw.weight",
+                    "blocks.2.1.conv_dw.weight",
+                    "blocks.2.1.conv_pwl.weight",
+                    "blocks.2.2.conv_pw.weight",
+                    "blocks.2.2.conv_dw.weight",
+                    "blocks.2.2.conv_pwl.weight",
+                    "blocks.3.0.conv_pw.weight",
+                    "blocks.3.0.conv_dw.weight",
+                    "blocks.3.0.conv_pwl.weight",
+                    "blocks.3.1.conv_pw.weight",
+                    "blocks.3.1.conv_dw.weight",
+                    "blocks.3.1.conv_pwl.weight",
+                    "blocks.3.2.conv_pw.weight",
+                    "blocks.3.2.conv_dw.weight",
+                    "blocks.3.2.conv_pwl.weight",
+                    "blocks.3.3.conv_pw.weight",
+                    "blocks.3.3.conv_dw.weight",
+                    "blocks.3.3.conv_pwl.weight",
+                    "blocks.4.0.conv_pw.weight",
+                    "blocks.4.0.conv_dw.weight",
+                    "blocks.4.0.conv_pwl.weight",
+                    "blocks.4.1.conv_pw.weight",
+                    "blocks.4.1.conv_dw.weight",
+                    "blocks.4.1.conv_pwl.weight",
+                    "blocks.4.2.conv_pw.weight",
+                    "blocks.4.2.conv_dw.weight",
+                    "blocks.4.2.conv_pwl.weight",
+                    "blocks.4.3.conv_pw.weight",
+                    "blocks.4.3.conv_dw.weight",
+                    "blocks.4.3.conv_pwl.weight",
+                    "blocks.5.0.conv_pw.weight",
+                    "blocks.5.0.conv_dw.weight",
+                    "blocks.5.0.conv_pwl.weight",
+                    "blocks.5.1.conv_pw.weight",
+                    "blocks.5.1.conv_dw.weight",
+                    "blocks.5.1.conv_pwl.weight",
+                    "blocks.5.2.conv_pw.weight",
+                    "blocks.5.2.conv_dw.weight",
+                    "blocks.5.2.conv_pwl.weight"
+                ]
+
+    - !GMPruningModifier
+        start_epoch: 2
+        end_epoch: 40
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.50
+        mask_type: unstructured
+        params: ['blocks.6.0.conv_pwl.weight']
+
+    - !GMPruningModifier
+        start_epoch: 5
+        end_epoch: 40
+        update_frequency: 1.0
+        init_sparsity: 0.05
+        final_sparsity: 0.50
+        mask_type: unstructured
+        params: ['conv_head.weight']
