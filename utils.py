@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, accuracy_score
+import onnx
+from loguru import logger
 
 def validate(model, val_loader, set_model_mode=True, override_to_cpu=False):
     if set_model_mode:
@@ -77,3 +79,26 @@ def calculate_sparsity(model):
         zeros_params += torch.sum(param == 0).item()
     sparsity = zeros_params/total_params
     return sparsity
+
+def get_input_output(onnx_path:str, default_batch_fallback=1):
+    model = onnx.load(onnx_path)
+    # Get input dimensions
+    input_dims = {}
+    for input_tensor in model.graph.input:
+        name = input_tensor.name
+        shape = [dim.dim_value for dim in input_tensor.type.tensor_type.shape.dim]
+        if shape[0] == 0 or shape[0] == -1:
+            shape[0] = default_batch_fallback
+            logger.warning("Dynamic batchsize detected; Default to {} (controlled by default_batch_fallback)".format(default_batch_fallback))
+        input_dims[name] = shape
+
+    # Get output dimensions
+    output_dims = {}
+    for output_tensor in model.graph.output:
+        name = output_tensor.name
+        shape = [dim.dim_value for dim in output_tensor.type.tensor_type.shape.dim]
+        if shape[0] == 0 or shape[0] == -1:
+            shape[0] = default_batch_fallback
+            logger.warning("Dynamic batchsize detected; Default to {} (controlled by default_batch_fallback)".format(default_batch_fallback))
+        output_dims[name] = shape
+    return input_dims, output_dims
