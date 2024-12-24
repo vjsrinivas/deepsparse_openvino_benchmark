@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+*.auth
+sparse_logs
+runs
+raw_runs

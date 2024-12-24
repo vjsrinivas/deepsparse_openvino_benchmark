@@ -50,8 +50,8 @@ def export_onnx(model, export_path:str, img_size=(224,224)):
 
 if __name__ == "__main__":
     ROOT_EXP = "runs"
-    BATCHSIZE = 64
-    VAL_BATCHSIZE = 256
+    BATCHSIZE = 512
+    VAL_BATCHSIZE = 512
     VAL_ITER = 2
 
     exp_name = generate_exp(ROOT_EXP)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [FINETUNE_EPOCH_1, FINETUNE_EPOCH_2], gamma=0.1)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = manager.modify(model, optimizer, train_length)
     scaler = torch.amp.GradScaler("cuda")
 
