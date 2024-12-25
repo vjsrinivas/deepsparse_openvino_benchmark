@@ -36,6 +36,25 @@ Apply the following properties for each model:
 * c4.large
 * c4.xlarge
 
+---------------
+* m5.xlarge [x]
+    * CPU: Intel Xeon Platinum 8175 (3.1 GHz)
+* m5n.xlarge [0]
+    * CPU: 	Intel Xeon Platinum 8259 (Cascade Lake) (3.1 GHz)
+* m6a.xlarge [o]
+    * CPU: 	AMD EPYC 7R13 Processor (3.6 GHz)
+* m7i.xlarge [o]
+    * CPU: Intel Xeon Scalable (Sapphire Rapids) (3.2 GHz)
+* c4.xlarge [o]
+    * CPU: Intel Xeon E5-2666 v3 (Haswell) (2.9 GHz)
+* t3.xlarge [o]
+    * CPU: Intel Skylake E5 2686 v5 (3.1 GHz)
+---------------
+
+* inf1.xlarge [o] [Architecture geared towards Neuron SDK]
+    * CPU: ntel Xeon Platinum 8275CL (Cascade Lake) (N/A GHz)
+
+
 # Results
 
 | Model Type | Pruned (Y/N) | Quantized (Y/N) |

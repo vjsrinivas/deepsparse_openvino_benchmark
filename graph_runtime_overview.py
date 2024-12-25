@@ -63,13 +63,23 @@ if __name__ == "__main__":
     #CPU = CPU.replace("processor_", "").replace("_processor", "")
     #ROOT = os.path.join(args.root, "output")
     OUTPUT_PATH = args.output
-    CATEGORIES = ["baseline", "deepsparse", "openvino", "ort"]
+    CATEGORIES = [
+                    "baseline",
+                    "deepsparse",
+                    "openvino",
+                    "ort"
+                ]
     
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     all_data = {cat:{_cpu:[] for _cpu in CPUS} for cat in CATEGORIES}
-    inverse_all_data = {}
+    all_data_ranges = {cat:[{_cpu:[] for _cpu in CPUS}, {_cpu:[] for _cpu in CPUS}] for cat in CATEGORIES}
     
-    category2title = {"baseline": "DeepSparse (deepsparse.benchmark)", "deepsparse": "DeepSparse", "openvino": "OpenVINO", "ort": "ONNXRuntime (Baseline)"}
+    category2title = {
+                        "baseline": "DeepSparse (deepsparse.benchmark)",
+                        "deepsparse": "DeepSparse",
+                        "openvino": "OpenVINO",
+                        "ort": "ONNXRuntime (Baseline)"
+                    }
     cpu2title = {
                     "amd_ryzen_7_2700x_eight-core_processor":"AMD Ryzen 7 2700X",
                     "amd_ryzen_7_2700x_eight-core_processor_2":"AMD Ryzen 7 2700X 2",
@@ -89,8 +99,13 @@ if __name__ == "__main__":
                     data = pd.read_csv(_file)
                     data = data.rename(columns=lambda x: x.strip())
                     _data.append(data["throughput"].values[0])
+                _max_data = np.max(_data)
+                _min_data = np.min(_data)
                 _data = np.median(_data)
                 all_data[category][CPUS[cpu_id]].append(_data)
+                all_data_ranges[category][0][CPUS[cpu_id]].append(_max_data)
+                all_data_ranges[category][1][CPUS[cpu_id]].append(_min_data)
+
                 #print(_data, category, folder)
 
     fig, ax = plt.subplots(1,1, figsize=(10,6))
@@ -100,11 +115,18 @@ if __name__ == "__main__":
     
     for r, runtime in enumerate(all_data.keys()):
         _cpus = []
+        _cpus_max = []
+        _cpus_min = []
         #for cpu in all_data[runtime].keys():
         for c, cpu in enumerate(cpu2title.keys()):
             all_models_data = all_data[runtime][cpu]
             model_data = np.mean(all_models_data)
+            model_data_max = np.mean(all_data_ranges[runtime][0][cpu])
+            model_data_min = np.mean(all_data_ranges[runtime][1][cpu])
             _cpus.append(model_data)
+            _cpus_max.append(model_data_max)
+            _cpus_min.append(model_data_min)
+        ax.fill_between(n_cpus, y1=_cpus_max, y2=_cpus_min, alpha=0.15)
         ax.plot(n_cpus, _cpus, label=category2title[runtime], marker=markers[r])
 
     ax.set_xticks(n_cpus)
