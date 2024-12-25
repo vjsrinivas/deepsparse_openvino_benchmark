@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# Activate environment (AWS ONLY):
+source activate pytorch
+
 # Directory where the folders are located
-base_directory="./models/"
+base_directory="/home/ubuntu/models/"
 n=5  # Change this to your desired value of n
 
 # Loop through each folder inside the base directory
