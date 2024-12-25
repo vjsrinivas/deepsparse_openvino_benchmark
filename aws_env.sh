@@ -1,3 +1,4 @@
+source activate pytorch # Activate PyTorch environment
 DUMP_ROOT="/home/ubuntu"
 pip install gdown
 pip install onnxruntime==1.20.1 deepsparse==1.8.0 openvino==2024.6.0 tqdm loguru scikit-learn
