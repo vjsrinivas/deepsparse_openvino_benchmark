@@ -39,15 +39,15 @@ Apply the following properties for each model:
 ---------------
 * m5.xlarge [x]
     * CPU: Intel Xeon Platinum 8175 (3.1 GHz)
-* m5n.xlarge [0]
+* m5n.xlarge [x]
     * CPU: 	Intel Xeon Platinum 8259 (Cascade Lake) (3.1 GHz)
-* m6a.xlarge [o]
+* m6a.xlarge [x]
     * CPU: 	AMD EPYC 7R13 Processor (3.6 GHz)
-* m7i.xlarge [o]
+* m7i.xlarge [x]
     * CPU: Intel Xeon Scalable (Sapphire Rapids) (3.2 GHz)
-* c4.xlarge [o]
+* c4.xlarge [x]
     * CPU: Intel Xeon E5-2666 v3 (Haswell) (2.9 GHz)
-* t3.xlarge [o]
+* t3.xlarge [x]
     * CPU: Intel Skylake E5 2686 v5 (3.1 GHz)
 ---------------
 

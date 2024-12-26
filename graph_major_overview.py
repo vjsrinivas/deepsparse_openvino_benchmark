@@ -59,7 +59,8 @@ if __name__ == "__main__":
     CPU = Path(args.root).stem 
     # clean up CPU title:
     CPU = CPU.replace("processor_", "").replace("_processor", "")
-    ROOT = os.path.join(args.root, "output")
+    #ROOT = os.path.join(args.root, "output")
+    ROOT = args.root
     OUTPUT_PATH = args.output
     CATEGORIES = ["baseline", "deepsparse", "openvino", "ort"]
     
@@ -119,5 +120,5 @@ if __name__ == "__main__":
     data = struct_runtimes
     category_labels = sorted_runtime_keys
     fig, ax = create_clustered_horizontal_bar_chart(categories, data, category_labels, "Network Throughput vs Runtimes\n(CPU - {})".format(CPU))
-    plt.savefig(os.path.join(args.output, "overview_graph.png"))
-    plt.savefig(os.path.join(args.output, "overview_graph.svg"))
+    plt.savefig(os.path.join(args.output, "overview_graph_{}.png".format(CPU)))
+    plt.savefig(os.path.join(args.output, "overview_graph_{}.svg".format(CPU)))

@@ -81,21 +81,36 @@ if __name__ == "__main__":
                         "ort": "ONNXRuntime (Baseline)"
                     }
     cpu2title = {
-                    "amd_ryzen_7_2700x_eight-core_processor":"AMD Ryzen 7 2700X",
-                    "amd_ryzen_7_2700x_eight-core_processor_2":"AMD Ryzen 7 2700X 2",
-                    "amd_ryzen_7_2700x_eight-core_processor_3":"AMD Ryzen 7 2700X 3",
-                    "amd_ryzen_7_2700x_eight-core_processor_4":"AMD Ryzen 7 2700X 4"
+                    "intel_xeon_platinum_8175m_cpu_2":"t3.xlarge",
+                    "intel_xeon_e5-2666_v3_cpu":"c4.xlarge",
+                    "amd_epyc_7r13_cpu":"m6a.xlarge",
+                    "intel_xeon_platinum_8175m_cpu":"m5.xlarge",
+                    "intel_xeon_platinum_8259cl_cpu":"m5n.xlarge",
+                    "intel_xeon_platinum_8488c_cpu":"m7i.xlarge"
+
+                    #"amd_epyc_7r13_cpu":"AMD EPYC 7R13",
+                    #"intel_xeon_e5-2666_v3_cpu":"Intel Skylake\nE5 2686 v3",
+                    #"intel_xeon_platinum_8175m_cpu":"Intel Xeon\nPlatinum 8175",
+                    #"intel_xeon_platinum_8175m_cpu_2":"Intel Xeon\nPlatinum 8175",
+                    #"intel_xeon_platinum_8259cl_cpu":"Intel Xeon\nPlatinum 8259",
+                    #"intel_xeon_platinum_8488c_cpu":"Intel Xeon\nScalable 8488C"
+
+                    #"amd_ryzen_7_2700x_eight-core_processor":"AMD Ryzen 7 2700X",
+                    #"amd_ryzen_7_2700x_eight-core_processor_2":"AMD Ryzen 7 2700X 2",
+                    #"amd_ryzen_7_2700x_eight-core_processor_3":"AMD Ryzen 7 2700X 3",
+                    #"amd_ryzen_7_2700x_eight-core_processor_4":"AMD Ryzen 7 2700X 4"
                 }
 
     for cpu_id, root in enumerate(ROOTS):
-        for folder in os.listdir(os.path.join(root, "output")):
+        for folder in os.listdir(os.path.join(root)):
+        #for folder in os.listdir(os.path.join(root, "output")):
             for category in CATEGORIES:
-                csv_files = os.listdir(os.path.join(root, "output", folder))
+                csv_files = os.listdir(os.path.join(root, folder))
                 csv_files = [_csv for _csv in csv_files if category in _csv]
                 
                 _data = []
                 for file in csv_files:
-                    _file = os.path.join(root, "output", folder, file)
+                    _file = os.path.join(root, folder, file)
                     data = pd.read_csv(_file)
                     data = data.rename(columns=lambda x: x.strip())
                     _data.append(data["throughput"].values[0])
@@ -132,7 +147,7 @@ if __name__ == "__main__":
     ax.set_xticks(n_cpus)
     ax.set_xticklabels(list(cpu2title.values()))
     ax.set_ylabel("Throughput (imgs/sec)")
-    ax.set_xlabel("CPU Type")
+    ax.set_xlabel("AWS Machine Type")
     ax.set_title("Average Inference Speed vs Throughput")
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
     plt.tight_layout()
