@@ -91,14 +91,10 @@ if __name__ == "__main__":
 
     train_dataset.set_transform(preproc_train_transforms)
     val_dataset.set_transform(preproc_val_transforms)
-    #train_dataset = train_dataset.map(preproc_train_transforms)
-    #val_dataset = val_dataset.map(preproc_val_transforms)
-
+    
     train_dataloader = DataLoader(train_dataset, batch_size=BATCHSIZE, shuffle=True, num_workers=4) 
     val_dataloader = DataLoader(val_dataset, batch_size=VAL_BATCHSIZE, shuffle=False, num_workers=4)
-    #train_length = math.ceil(1281167/BATCHSIZE)
-    #train_length = len(train_dataloader)
-    train_length = 1
+    train_length = len(train_dataloader)
 
     # sensitivity testing (disable when you have the layers you want):
     if torch.cuda.is_available():
@@ -190,7 +186,6 @@ if __name__ == "__main__":
                 # save model here:
                 torch.save(model.state_dict(), os.path.join(exp_name, "best_val.pt"))
 
-    #model_int8 = torch.quantization.convert(model)
     manager.finalize(model)
     acc = validate(model, val_dataloader)
     
@@ -199,6 +194,4 @@ if __name__ == "__main__":
     print("> Final validation score: {}".format(acc))
     print("> Final sparsity level: {}".format(sparsity_level))
     torch.save(model.state_dict(), os.path.join(exp_name, "finalize_model.pt"))
-
-    #model_int8 = model.cpu()
     export_onnx(model, export_path=os.path.join(exp_export_path, "mobilevit-xs-imagenet-pruned.onnx"))

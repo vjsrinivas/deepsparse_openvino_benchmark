@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Activate environment (AWS ONLY):
-source activate pytorch
+#source activate pytorch
 
 # Directory where the folders are located
 base_directory="/home/ubuntu/models/"

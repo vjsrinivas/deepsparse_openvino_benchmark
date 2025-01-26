@@ -39,19 +39,10 @@ def export_onnx(model, export_path:str, img_size=(224,224)):
     assert check, "Simplified ONNX model could not be validated"
     onnx.save_model(model_simp, export_path)
 
-# def quant_remove_qaconfig_channel(model:nn.Module):
-#     for layer in model.children():
-#         if isinstance(layer, nn.Conv2d):
-#             if layer.groups > 1:
-#                 layer.qconfig = None
-#             #print(layer.groups)
-#         elif isinstance(layer, nn.Module):
-#             quant_remove_qaconfig_channel(layer)
-
 if __name__ == "__main__":
     ROOT_EXP = "runs"
-    BATCHSIZE = 32
-    VAL_BATCHSIZE = 256
+    BATCHSIZE = 1
+    VAL_BATCHSIZE = 1
     VAL_ITER = 2
 
     exp_name = generate_exp(ROOT_EXP)
@@ -61,8 +52,12 @@ if __name__ == "__main__":
     os.makedirs(exp_export_path, exist_ok=True)
 
     # model setup:
-    model = timm.create_model('tf_efficientnet_b2.in1k', pretrained=True, exportable=True)
-    export_onnx(model, export_path=os.path.join(exp_export_path, "efficientnet-b2-imagenet-base.onnx"))
+    #MODEL_NAME = "mobilevit_xs.cvnets_in1k"
+    #MODEL_NAME = "tf_efficientnet_b0.in1k"
+    MODEL_NAME = "tf_efficientnet_b2.in1k"
+
+    model = timm.create_model(MODEL_NAME, pretrained=True, exportable=True)
+    export_onnx(model, export_path=os.path.join(exp_export_path, "{}_base.onnx".format(MODEL_NAME)))
 
     # setup dataset:
     data_config = timm.data.resolve_model_data_config(model)
@@ -76,7 +71,7 @@ if __name__ == "__main__":
     def preproc_val_transforms(examples):
         examples['image'] = [ val_transforms(image.convert('RGB')) for image in examples["image"]] 
         return examples
-
+    
     train_dataset = load_dataset("imagenet-1k", split="train", streaming=False, trust_remote_code=True)
     val_dataset = load_dataset("imagenet-1k", split="validation", streaming=False, trust_remote_code=True)
 
@@ -85,15 +80,18 @@ if __name__ == "__main__":
 
     train_dataloader = DataLoader(train_dataset, batch_size=BATCHSIZE, shuffle=True, num_workers=4) 
     val_dataloader = DataLoader(val_dataset, batch_size=VAL_BATCHSIZE, shuffle=False, num_workers=4)
-    train_length = len(train_dataloader)
+    train_length = 1
 
     # sensitivity testing (disable when you have the layers you want):
     if torch.cuda.is_available():
         model = model.cuda()
-    sensitivity_analysis(model, val_dataloader, exp_name, None)
 
     # training hyp
-    PATH_TO_RECIPE = "efficientnet_b2_layer.yaml"
+    #PATH_TO_RECIPE = "mobilevit_xs_layer.yaml"
+    #PATH_TO_RECIPE = "efficientnet_b0_layer.yaml"
+    #PATH_TO_RECIPE = "efficientnet_b2_layer.yaml"
+    #PATH_TO_RECIPE = "fake_85.yaml" # fake 85% sparsity
+    PATH_TO_RECIPE = "fake_99.yaml" # fake 99% sparsity
     LR = 0.01
     
     manager = ScheduledModifierManager.from_yaml(PATH_TO_RECIPE)
@@ -103,20 +101,21 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [FINETUNE_EPOCH_1, FINETUNE_EPOCH_2], gamma=0.1)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = manager.modify(model, optimizer, train_length)
     scaler = torch.amp.GradScaler("cuda")
 
     BEST_LOSS = 1e100
     BEST_VAL = 0.0
 
-    acc = validate(model, val_dataloader, override_to_cpu=False, set_model_mode=True)
-    writer.add_scalar("original_acc", acc, 0)
+    #acc = validate(model, val_dataloader, override_to_cpu=False, set_model_mode=True)
+    #writer.add_scalar("original_acc", acc, 0)
     running_items = train_length
 
     for epoch in range(EPOCHS):
         logger.info("Epoch: {}".format(epoch))
         running_loss = 0.0
+        #train_dataset.shuffle()
 
         for data in tqdm(train_dataloader):
             optimizer.zero_grad(set_to_none=True)
@@ -136,6 +135,7 @@ if __name__ == "__main__":
             scaler.update()
 
             running_loss += loss.item()
+            break
 
         scheduler.step(epoch)
         _loss = running_loss/running_items
@@ -152,21 +152,13 @@ if __name__ == "__main__":
             torch.save(model.state_dict(), os.path.join(exp_name, "best_loss.pt"))
         writer.add_scalar("train/loss", _loss, epoch)
 
-        if epoch % VAL_ITER == 0:
-            acc = validate(model, val_dataloader)
-            logger.success("Best val acc: {}".format(acc))
-            writer.add_scalar("val/acc", acc, epoch)
-
-            if acc > BEST_VAL:
-                BEST_VAL = acc
-                # save model here:
-                torch.save(model.state_dict(), os.path.join(exp_name, "best_val.pt"))
-
     manager.finalize(model)
-    acc = validate(model, val_dataloader)
+    #acc = validate(model, val_dataloader)
+    
     model = model.cpu()
     sparsity_level = calculate_sparsity(model)
-    print("> Final validation score: {}".format(acc))
+    #print("> Final validation score: {}".format(acc))
     print("> Final sparsity level: {}".format(sparsity_level))
     torch.save(model.state_dict(), os.path.join(exp_name, "finalize_model.pt"))
-    export_onnx(model, export_path=os.path.join(exp_export_path, "efficientnet-b2-imagenet-pruned.onnx"))
+
+    export_onnx(model, export_path=os.path.join(exp_export_path, "{}_pruned.onnx".format(MODEL_NAME)))

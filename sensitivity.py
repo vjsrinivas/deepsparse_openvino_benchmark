@@ -10,6 +10,22 @@ from utils import validate, get_layer_by_name
 from loguru import logger
 from tqdm import tqdm
 
+def graph_viz(data, savefig_path:str, title=None, xlabel="Sparsity Level", ylabel="ImageNet-1k Validation Accuracy") -> None:
+    plt.figure()
+    all_data, all_metadata = data
+    for layer in all_data.keys():
+        averaged_vals, max_val, min_val = all_data[layer]
+        sparse_list = all_metadata[layer]
+        plt.plot(sparse_list, averaged_vals, label=layer)
+    plt.legend()
+    if title is not None:
+        plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.savefig(os.path.join(savefig_path, "sensitivity_graph_labeled.png"))
+    plt.savefig(os.path.join(savefig_path, "sensitivity_graph_labeled.svg"))
+    plt.close()
+
 def random_weight_masking(layer, model, sparsity:float, seed:int):
     np.random.seed(seed)
     _layer = get_layer_by_name(model, layer)
@@ -84,11 +100,9 @@ def sensitivity_analysis(model, dataloader, export_path:str, layers):
 
                     # reset model weights:
                     model.load_state_dict(_model_data)
-    
-    # graphing:
-    plt.figure()
 
     all_data = {}
+    all_metadata = {}
     for layer in layers:
         # list that contains all sparsity levels 
         averaged_vals = [] 
@@ -104,14 +118,46 @@ def sensitivity_analysis(model, dataloader, export_path:str, layers):
             max_val.append(_max)
             min_val.append(_min) 
         
-        plt.plot([0]+sparse_list, averaged_vals, label=layer)
+        #plt.plot([0]+sparse_list, averaged_vals, label=layer)
         all_data[layer] = [averaged_vals, max_val, min_val]   
+        all_metadata[layer] = [0]+sparse_list
 
-    plt.legend()
-    plt.savefig(os.path.join(export_path, "sensitivity.svg"))
+    graph_viz(
+                [all_data, all_metadata],
+                export_path,
+                None              
+            )
+    #plt.legend()
+    #plt.savefig(os.path.join(export_path, "sensitivity.svg"))
     #plt.show()
     np.save(os.path.join(export_path, "raw_sensitivity.npy"), all_data)
     model.train()
 
 if __name__ == "__main__":
-    pass
+    # After-the-fact numpy calculation:
+    from argparse import ArgumentParser
+    from pathlib import Path
+
+    parser = ArgumentParser()
+    parser.add_argument("--npy", type=str, required=True)
+    parser.add_argument("--model_name", type=str, required=True)
+    parser.add_argument("--savepath", type=str, default=None, required=False)
+    args = parser.parse_args()
+
+    if args.savepath is None:
+        save_path = str(Path(args.npy).parent.resolve())
+    else:
+        save_path = args.savepath
+
+    # Load in npy:
+    _data = np.load(args.npy, allow_pickle=True).item()
+    sparse_list = [i/100 for i in range(10,100,10)]
+    _data_range = [0]+sparse_list
+    data_range = {_layer:_data_range for _layer in _data.keys()}
+
+    graph_viz(
+        [_data, data_range],
+        save_path,
+        "Sensitivity Analysis of {}".format(args.model_name)                
+    )
+
