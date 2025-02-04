@@ -82,7 +82,8 @@ As an aside, the compressive affects of pruning can be seen in Table 2. I use gz
 | InceptionV3 | 88.63 | 25.37 | 3.49x |  
 
 <figcaption>Table 2. Table shows the different sparsity levels and their affect on file size after gzip compression with the compression ratio set to 9 (the highest).</figcaption>
-<figcaption><b style="color: red;">*</b> - INT8 quantization was also applied. </figcaption>
+
+<b style="color: red;">*</b> - INT8 quantization was also applied.
 </figure>
 
 ## Graphing Results
