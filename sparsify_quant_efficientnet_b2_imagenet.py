@@ -15,13 +15,12 @@ from onnxsim import simplify
 from sparseml.pytorch.optim import ScheduledModifierManager
 import math
 from sensitivity import sensitivity_analysis
+from argparse import ArgumentParser
 
 
 def export_onnx(model, export_path:str, img_size=(224,224)):
     # Export the model
     x = torch.zeros((1,3, img_size[0], img_size[1]), requires_grad=True)
-    #x = x.cuda()
-
     torch.onnx.export(
                     model,               # model being run
                     x,                         # model input (or a tuple for multiple inputs)
@@ -39,21 +38,21 @@ def export_onnx(model, export_path:str, img_size=(224,224)):
     assert check, "Simplified ONNX model could not be validated"
     onnx.save_model(model_simp, export_path)
 
-# def quant_remove_qaconfig_channel(model:nn.Module):
-#     for layer in model.children():
-#         if isinstance(layer, nn.Conv2d):
-#             if layer.groups > 1:
-#                 layer.qconfig = None
-#             #print(layer.groups)
-#         elif isinstance(layer, nn.Module):
-#             quant_remove_qaconfig_channel(layer)
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--sensitivity", action="store_true", default=False, required=False, help="Flag will trigger sensitivity_analysis() to run. Program will not continnue after analysis")
+    return parser.parse_args()
 
 if __name__ == "__main__":
+    args = parse_args()
+
     ROOT_EXP = "runs"
     BATCHSIZE = 32
     VAL_BATCHSIZE = 256
-    VAL_ITER = 2
-
+    VAL_ITER = 2    
+    PATH_TO_RECIPE = "./configs/efficientnet_b2_layer.yaml"
+    LR = 0.01
+    
     exp_name = generate_exp(ROOT_EXP)
     writer = SummaryWriter(exp_name)
     os.makedirs(exp_name, exist_ok=True)
@@ -90,12 +89,12 @@ if __name__ == "__main__":
     # sensitivity testing (disable when you have the layers you want):
     if torch.cuda.is_available():
         model = model.cuda()
-    sensitivity_analysis(model, val_dataloader, exp_name, None)
+
+    if args.sensitivity:
+        sensitivity_analysis(model, val_dataloader, exp_name, None)
+        exit(0)
 
     # training hyp
-    PATH_TO_RECIPE = "efficientnet_b2_layer.yaml"
-    LR = 0.01
-    
     manager = ScheduledModifierManager.from_yaml(PATH_TO_RECIPE)
     EPOCHS = manager.max_epochs
     FINETUNE_EPOCH_1 = int(EPOCHS*0.8)
@@ -140,7 +139,6 @@ if __name__ == "__main__":
         scheduler.step(epoch)
         _loss = running_loss/running_items
         logger.info("Loss: {}".format(_loss))
-        #model_int8 = torch.quantization.convert(model)
 
         lr = optimizer.param_groups[0]['lr']
         logger.debug("\tLoss: {}".format(lr))
@@ -164,6 +162,7 @@ if __name__ == "__main__":
 
     manager.finalize(model)
     acc = validate(model, val_dataloader)
+
     model = model.cpu()
     sparsity_level = calculate_sparsity(model)
     print("> Final validation score: {}".format(acc))

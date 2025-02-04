@@ -127,9 +127,7 @@ def sensitivity_analysis(model, dataloader, export_path:str, layers):
                 export_path,
                 None              
             )
-    #plt.legend()
-    #plt.savefig(os.path.join(export_path, "sensitivity.svg"))
-    #plt.show()
+
     np.save(os.path.join(export_path, "raw_sensitivity.npy"), all_data)
     model.train()
 

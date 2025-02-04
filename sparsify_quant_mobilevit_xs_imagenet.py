@@ -15,12 +15,12 @@ from onnxsim import simplify
 from sparseml.pytorch.optim import ScheduledModifierManager
 import math
 from sensitivity import sensitivity_analysis
+from argparse import ArgumentParser
 
 
 def export_onnx(model, export_path:str, img_size=(224,224)):
     # Export the model
     x = torch.zeros((1,3, img_size[0], img_size[1]), requires_grad=True)
-    #x = x.cuda()
 
     torch.onnx.export(
                     model,               # model being run
@@ -39,20 +39,21 @@ def export_onnx(model, export_path:str, img_size=(224,224)):
     assert check, "Simplified ONNX model could not be validated"
     onnx.save_model(model_simp, export_path)
 
-# def quant_remove_qaconfig_channel(model:nn.Module):
-#     for layer in model.children():
-#         if isinstance(layer, nn.Conv2d):
-#             if layer.groups > 1:
-#                 layer.qconfig = None
-#             #print(layer.groups)
-#         elif isinstance(layer, nn.Module):
-#             quant_remove_qaconfig_channel(layer)
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--sensitivity", action="store_true", default=False, required=False, help="Flag will trigger sensitivity_analysis() to run. Program will not continnue after analysis")
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
+    args = parse_args()
+
     ROOT_EXP = "runs"
     BATCHSIZE = 512
     VAL_BATCHSIZE = 512
     VAL_ITER = 2
+    PATH_TO_RECIPE = "mobilevit_xs_layer.yaml"
+    LR = 0.01
 
     exp_name = generate_exp(ROOT_EXP)
     writer = SummaryWriter(exp_name)
@@ -77,15 +78,6 @@ if __name__ == "__main__":
         examples['image'] = [ val_transforms(image.convert('RGB')) for image in examples["image"]] 
         return examples
 
-    """
-    def preproc_train_transforms(examples):
-        examples['image'] = train_transforms(examples['image'].convert('RGB')) 
-        return examples
-    
-    def preproc_val_transforms(examples):
-        examples['image'] = val_transforms(examples['image'].convert('RGB')) 
-        return examples
-    """ 
     train_dataset = load_dataset("imagenet-1k", split="train", streaming=False, trust_remote_code=True)
     val_dataset = load_dataset("imagenet-1k", split="validation", streaming=False, trust_remote_code=True)
 
@@ -99,26 +91,11 @@ if __name__ == "__main__":
     # sensitivity testing (disable when you have the layers you want):
     if torch.cuda.is_available():
         model = model.cuda()
-    #sensitivity_analysis(model, val_dataloader, exp_name, None)
 
-
-    # quantization setup:
-    """
-    model.eval()
-    model.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
-    model = torch.quantization.fuse_modules(model,
-        [
-            ['blocks', 'conv', 'bn', 'relu']
-        ]
-    )
-    model.train()
-    model = torch.quantization.prepare_qat(model)
-    """
-
-    # training hyp
-    PATH_TO_RECIPE = "mobilevit_xs_layer.yaml"
-    LR = 0.01
+    if args.sensitivity:
+        sensitivity_analysis(model, val_dataloader, exp_name, None)
     
+    # training hyp
     manager = ScheduledModifierManager.from_yaml(PATH_TO_RECIPE)
     EPOCHS = manager.max_epochs
     FINETUNE_EPOCH_1 = int(EPOCHS*0.8)
@@ -140,7 +117,6 @@ if __name__ == "__main__":
     for epoch in range(EPOCHS):
         logger.info("Epoch: {}".format(epoch))
         running_loss = 0.0
-        #train_dataset.shuffle()
 
         for data in tqdm(train_dataloader):
             optimizer.zero_grad(set_to_none=True)
@@ -164,7 +140,6 @@ if __name__ == "__main__":
         scheduler.step(epoch)
         _loss = running_loss/running_items
         logger.info("Loss: {}".format(_loss))
-        #model_int8 = torch.quantization.convert(model)
 
         lr = optimizer.param_groups[0]['lr']
         logger.debug("\tLoss: {}".format(lr))
@@ -188,7 +163,6 @@ if __name__ == "__main__":
 
     manager.finalize(model)
     acc = validate(model, val_dataloader)
-    
     model = model.cpu()
     sparsity_level = calculate_sparsity(model)
     print("> Final validation score: {}".format(acc))

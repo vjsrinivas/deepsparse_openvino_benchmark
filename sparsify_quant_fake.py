@@ -15,6 +15,7 @@ from onnxsim import simplify
 from sparseml.pytorch.optim import ScheduledModifierManager
 import math
 from sensitivity import sensitivity_analysis
+from argparse import ArgumentParser
 
 
 def export_onnx(model, export_path:str, img_size=(224,224)):
@@ -39,7 +40,16 @@ def export_onnx(model, export_path:str, img_size=(224,224)):
     assert check, "Simplified ONNX model could not be validated"
     onnx.save_model(model_simp, export_path)
 
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--sensitivity", action="store_true", default=False, required=False, help="Flag will trigger sensitivity_analysis() to run. Program will not continnue after analysis")
+    parser.add_argument("--fake-yaml", type=str, required=True, help="Path to yaml file for fake pruning")
+    parser.add_argument("--model", type=str, required=True)
+    return parser.parse_args()
+
 if __name__ == "__main__":
+    args = parse_args()
+
     ROOT_EXP = "runs"
     BATCHSIZE = 1
     VAL_BATCHSIZE = 1
@@ -52,9 +62,8 @@ if __name__ == "__main__":
     os.makedirs(exp_export_path, exist_ok=True)
 
     # model setup:
-    #MODEL_NAME = "mobilevit_xs.cvnets_in1k"
-    #MODEL_NAME = "tf_efficientnet_b0.in1k"
-    MODEL_NAME = "tf_efficientnet_b2.in1k"
+    # "mobilevit_xs.cvnets_in1k" "tf_efficientnet_b0.in1k" "tf_efficientnet_b2.in1k" are choices for args.model
+    MODEL_NAME = args.model
 
     model = timm.create_model(MODEL_NAME, pretrained=True, exportable=True)
     export_onnx(model, export_path=os.path.join(exp_export_path, "{}_base.onnx".format(MODEL_NAME)))
@@ -87,11 +96,7 @@ if __name__ == "__main__":
         model = model.cuda()
 
     # training hyp
-    #PATH_TO_RECIPE = "mobilevit_xs_layer.yaml"
-    #PATH_TO_RECIPE = "efficientnet_b0_layer.yaml"
-    #PATH_TO_RECIPE = "efficientnet_b2_layer.yaml"
-    #PATH_TO_RECIPE = "fake_85.yaml" # fake 85% sparsity
-    PATH_TO_RECIPE = "fake_99.yaml" # fake 99% sparsity
+    PATH_TO_RECIPE = args.fake_yaml # fake 99% sparsity
     LR = 0.01
     
     manager = ScheduledModifierManager.from_yaml(PATH_TO_RECIPE)
@@ -108,14 +113,13 @@ if __name__ == "__main__":
     BEST_LOSS = 1e100
     BEST_VAL = 0.0
 
-    #acc = validate(model, val_dataloader, override_to_cpu=False, set_model_mode=True)
-    #writer.add_scalar("original_acc", acc, 0)
+    acc = validate(model, val_dataloader, override_to_cpu=False, set_model_mode=True)
+    writer.add_scalar("original_acc", acc, 0)
     running_items = train_length
 
     for epoch in range(EPOCHS):
         logger.info("Epoch: {}".format(epoch))
         running_loss = 0.0
-        #train_dataset.shuffle()
 
         for data in tqdm(train_dataloader):
             optimizer.zero_grad(set_to_none=True)
@@ -135,12 +139,11 @@ if __name__ == "__main__":
             scaler.update()
 
             running_loss += loss.item()
-            break
+            break # NOTE: feed just one batch and run pruning
 
         scheduler.step(epoch)
         _loss = running_loss/running_items
         logger.info("Loss: {}".format(_loss))
-        #model_int8 = torch.quantization.convert(model)
 
         lr = optimizer.param_groups[0]['lr']
         logger.debug("\tLoss: {}".format(lr))
@@ -153,11 +156,11 @@ if __name__ == "__main__":
         writer.add_scalar("train/loss", _loss, epoch)
 
     manager.finalize(model)
-    #acc = validate(model, val_dataloader)
-    
+    acc = validate(model, val_dataloader)
+
     model = model.cpu()
     sparsity_level = calculate_sparsity(model)
-    #print("> Final validation score: {}".format(acc))
+    print("> Final validation score: {}".format(acc))
     print("> Final sparsity level: {}".format(sparsity_level))
     torch.save(model.state_dict(), os.path.join(exp_name, "finalize_model.pt"))
 
