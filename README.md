@@ -1,4 +1,5 @@
 # DeepSparse vs OpenVINO Benchmark
+[Blog Post with Full Details](https://vjraj.dev/blog/pruning_experiment)
 
 **TLDR:** DeepSparse outperformed OpenVINO in throughput (img/s) by an average of 12%. It also excelled in all the lower-end compute scenarios tested and with most network architectures. However, on the m7i.xlarge instance (Intel Platinum 8488C), OpenVINO outperformed DeepSparse by an average of 17%.
 
